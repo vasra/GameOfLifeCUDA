@@ -16,6 +16,9 @@ constexpr int topRight    = topLeft + size - 1;
 constexpr int bottomLeft  = (size + 2) * size + 1;
 constexpr int bottomRight = bottomLeft + size - 1;
 
+constexpr int bottomLeftHalo  = (size + 1) * (size + 2) + 1;
+constexpr int bottomRightHalo = bottomLeftHalo + size - 1;
+
 int
 main() {
     std::cout << "Hello world test!" << std::endl;
@@ -43,9 +46,10 @@ copyHaloRowsTest() {
     assert(cudaSuccess == err);
 
     constexpr int copyingBlocksRows = size / threads;
-    std::vector<char> firstRealRow(h_life + topLeft, h_life + topRight);
-    std::vector<char> lastRealRow(h_life + bottomLeft, h_life + bottomRight);
+    std::vector<char> firstRealRow(h_life + topLeft, h_life + topRight + 1);
+    std::vector<char> lastRealRow(h_life + bottomLeft, h_life + bottomRight + 1);
 
+	std::cout << "firstRealRow size: " << firstRealRow.size() << std::endl;
     assert(firstRealRow.size() == size);
 
     copyHaloRows<<<copyingBlocksRows, threads>>>(d_life, size);
@@ -56,10 +60,13 @@ copyHaloRowsTest() {
     err = cudaMemcpy(h_life, d_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyDeviceToHost);
     assert(cudaSuccess == err);
 
-    std::vector<char> topHaloRow(h_life + 1, h_life + size);
-    std::vector<char> bottomHaloRow(h_life + (size + 2) * (size + 1) + 1, h_life + (size + 2) * (size + 1) + size);
+    std::vector<char> topHaloRow(h_life + 1, h_life + size + 1);
+    std::vector<char> bottomHaloRow(h_life + bottomLeftHalo, h_life + bottomRightHalo + 1);
 
-    assert(firstRealRow == bottomHaloRow);
+	assert(topHaloRow.size() == size);
+	assert(bottomHaloRow.size() == size);
+
+	assert(firstRealRow == bottomHaloRow);
     assert(lastRealRow  == topHaloRow);
 
     cudaFree(d_life);

@@ -115,10 +115,10 @@ initialState(int size, char* h_life) {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> probability(0.0f, 1.0f);
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
+    for (int i = 0; i < size + 2; i++) {
+        for (int j = 0; j < size + 2; j++) {
             // Initialize all halo values to 0. The rest will be assigned values randomly.
-            if (0 == i || size - 1 == i || 0 == j || size - 1 == j) {
+            if (0 == i || size + 1 == i || 0 == j || size + 1 == j) {
                 *(h_life + i * size + j) = 0;
             } else {
                 randomProbability = static_cast<float>(probability(gen));
