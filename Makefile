@@ -36,41 +36,6 @@
 # Location of the CUDA Toolkit
 CUDA_PATH ?= /usr/local/cuda-11.4
 
-##############################
-# start deprecated interface #
-##############################
-ifeq ($(x86_64),1)
-    $(info WARNING - x86_64 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=x86_64 instead)
-    TARGET_ARCH ?= x86_64
-endif
-ifeq ($(ARMv7),1)
-    $(info WARNING - ARMv7 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=armv7l instead)
-    TARGET_ARCH ?= armv7l
-endif
-ifeq ($(aarch64),1)
-    $(info WARNING - aarch64 variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=aarch64 instead)
-    TARGET_ARCH ?= aarch64
-endif
-ifeq ($(ppc64le),1)
-    $(info WARNING - ppc64le variable has been deprecated)
-    $(info WARNING - please use TARGET_ARCH=ppc64le instead)
-    TARGET_ARCH ?= ppc64le
-endif
-ifneq ($(GCC),)
-    $(info WARNING - GCC variable has been deprecated)
-    $(info WARNING - please use HOST_COMPILER=$(GCC) instead)
-    HOST_COMPILER ?= $(GCC)
-endif
-ifneq ($(abi),)
-    $(error ERROR - abi variable has been removed)
-endif
-############################
-# end deprecated interface #
-############################
-
 # architecture
 HOST_ARCH   := $(shell uname -m)
 TARGET_ARCH ?= $(HOST_ARCH)
@@ -279,7 +244,7 @@ LIBRARIES :=
 ################################################################################
 
 # Gencode arguments
-SMS ?= 52 60 61 70 75 80 86
+SMS ?= 61
 
 ifeq ($(SMS),)
 $(info >>> WARNING - no SM architectures have been specified - waiving sample <<<)
@@ -303,13 +268,11 @@ ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
 endif
 
-CUDA_INSTALL_PATH = /usr/local/cuda-11.4
-CC = g++
 OPTFLAG = -O2 -fomit-frame-pointer -ftree-vectorize -ftree-vectorizer-verbose=0  -funroll-loops
 NVCC = ${CUDA_INSTALL_PATH}/bin/nvcc
-INCDIR = -Icuda_lib/cuda_lib/include
+INCDIR = -Icuda_lib/include
 FLAGS = ${OPTFLAG} -I${CUDA_INSTALL_PATH}/include -Wall -g ${INCDIR}
-NVFLAGS = -O2 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v -g ${INCDIR}
+NVCCFLAGS += -O2 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v -g ${INCDIR}
 BITS = $(shell getconf LONG_BIT)
 ifeq (${BITS},64)
         LIBSUFFIX := 64
@@ -324,23 +287,23 @@ OUTPUT_DIR = bin
 CUDA_LIBRARY = gol.a
 
 # CUDA source path
-CUDA_SRC = cuda_lib/cuda_lib/src
+CUDA_SRC = cuda_lib/src
 
 all: gol.o gol.a lifeTest.o lifeTest
 
 #build: lifeTest
 
 gol.o: $(CUDA_SRC)/gol.cu
-	$(NVCC) $(NVFLAGS) -o $@ -c $<
+	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
 	mkdir -p $(OUTPUT_DIR)
 	mv $@ $(OUTPUT_DIR)/$@
 
 $(CUDA_LIBRARY): $(OUTPUT_DIR)/gol.o
-	$(NVCC) $(NVFLAGS) -lib -o $@ $<
+	$(NVCC) $(NVCCFLAGS) -lib -o $@ $<
 	mv $@ $(OUTPUT_DIR)/$@
 
 lifeTest.o: test/lifeTest.cu
-	$(NVCC) $(NVFLAGS) -L$(OUTPUT_DIR)/$(CUDA_LIBRARY) -DUNIX -c $< -o $@
+	$(NVCC) $(NVCCFLAGS) -L$(OUTPUT_DIR)/$(CUDA_LIBRARY) -DUNIX -c $< -o $@
 	mv $@ $(OUTPUT_DIR)/$@
 
 lifeTest: $(OUTPUT_DIR)/lifeTest.o $(OUTPUT_DIR)/gol.a
