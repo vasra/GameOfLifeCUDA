@@ -269,10 +269,10 @@ EXEC ?= @echo "[@]"
 endif
 
 OPTFLAG = -O2 -fomit-frame-pointer -ftree-vectorize -ftree-vectorizer-verbose=0  -funroll-loops
-NVCC = ${CUDA_INSTALL_PATH}/bin/nvcc
+#NVCC = ${CUDA_INSTALL_PATH}/bin/nvcc
 INCDIR = -Icuda_lib/include
 FLAGS = ${OPTFLAG} -I${CUDA_INSTALL_PATH}/include -Wall -g ${INCDIR}
-NVCCFLAGS += -O2 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v -g ${INCDIR}
+NVCCFLAGS += -O0 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v -g ${INCDIR}
 BITS = $(shell getconf LONG_BIT)
 ifeq (${BITS},64)
         LIBSUFFIX := 64
@@ -307,7 +307,7 @@ lifeTest.o: test/lifeTest.cu
 	mv $@ $(OUTPUT_DIR)/$@
 
 lifeTest: $(OUTPUT_DIR)/lifeTest.o $(OUTPUT_DIR)/gol.a
-	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(NVCCFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	mv $@ $(OUTPUT_DIR)/$@
 
 clean:

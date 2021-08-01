@@ -74,16 +74,15 @@ nextGen(char* d_life, char* d_life_copy, int size) {
 }
 
 __host__ void
-printGrid(int rows, int columns, char* h_life) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < columns; j++) {
-            printf("%d ", *(h_life + i * columns + j));
-            if (j == columns - 1) {
-                printf("\n");
-            }
-        }
+printGrid(int size, char* h_life) {
+  for (int i = 0; i < size + 2; i++) {
+    for (int j = 0; j < size + 2; j++) {
+      printf("%d", *(h_life + i * (size + 2) + j));
+      if (j == size + 1) {
+        printf("\n");
+      }
     }
-    printf("\n");
+  }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -101,13 +100,13 @@ initialState(int size, char* h_life) {
         for (int j = 0; j < size + 2; j++) {
             // Initialize all halo values to 0. The rest will be assigned values randomly.
             if (0 == i || size + 1 == i || 0 == j || size + 1 == j) {
-                *(h_life + i * size + j) = 0;
+                *(h_life + i * (size + 2) + j) = 0;
             } else {
                 randomProbability = static_cast<float>(probability(gen));
                 if (randomProbability >= 0.5f) {
-                    *(h_life + i * size + j) = 1;
+                    *(h_life + i * (size + 2) + j) = 1;
                 } else {
-                    *(h_life + i * size + j) = 0;
+                    *(h_life + i * (size + 2) + j) = 0;
                 }
             }
         }

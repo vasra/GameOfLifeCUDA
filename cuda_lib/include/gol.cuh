@@ -14,7 +14,7 @@
 #include <device_launch_parameters.h>
 
 __host__ void
-printGrid(int rows, int columns, char* h_life);
+printGrid(int size, char* h_life);
 
 __host__ void
 initialState(int size, char* h_life);
