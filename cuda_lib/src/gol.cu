@@ -2,19 +2,19 @@
 
 __global__ void
 copyHaloRows(char* d_life, const int size) {
-    int threadID = blockIdx.x * blockDim.x + threadIdx.x + 1;
+    int threadID = blockIdx.x * blockDim.x + threadIdx.x;
 
     // threadID must be in the range [1, size]
-    if (threadID <= size) {
-        d_life[threadID] = d_life[size * (size + 2) + threadID];                   // copy bottom row to upper halo row
-        d_life[(size + 2) * (size + 1) + threadID] = d_life[size + 2 + threadID];  // copy upper row to bottom halo row
+    if (threadID >= 1 && threadID <= size) {
+        d_life[threadID] = d_life[threadID + size * (size + 2)];                   // copy bottom row to upper halo row
+        d_life[threadID + (size + 2) * (size + 1)] = d_life[threadID + size + 2];  // copy upper row to bottom halo row
     }
 }
 
 __global__ void
 copyHaloColumns(char* d_life, const int size) {
     int threadID = blockIdx.x * blockDim.x + threadIdx.x;
-    
+
     // threadID must be in the range [0, size + 1]
     if (threadID <= size + 1) {
         d_life[(size + 2) * threadID] = d_life[(size + 2) * threadID + size];           // copy rightmost column to left halo column
@@ -72,24 +72,6 @@ nextGen(char* d_life, char* d_life_copy, int size) {
         sgrid[threadIdLocal] = 0;
     }
 }
-
-//int main() {
-//    // Pointer to the 2D grid. Only one is needed in the host.
-//    // We add 2 to each side, in order to include the halo rows and columns
-//    char *h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
-//
-//    // Produce the first generation randomly in the host
-//    InitialState(size, h_life);
-//    
-//    float msecs = GameOfLife(size, h_life, generations);
-//
-//    printf("Elapsed time is %.2f msecs\n", msecs);
-//
-//    // Clean up and exit
-//    free(h_life);
-// 
-//    return 0;
-//}
 
 __host__ void
 printGrid(int rows, int columns, char* h_life) {
