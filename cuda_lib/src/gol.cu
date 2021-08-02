@@ -2,12 +2,18 @@
 
 __global__ void
 copyHaloRows(char* d_life, const int size) {
+    // The global ID of the thread, aka its position on the 2D grid
     int threadID = blockIdx.x * blockDim.x + threadIdx.x;
-
+    // The index of the first and last elements of the bottom halo respectively.
+    // We do not take into account the corner elements
+    const int bottomLeftHalo = (size + 1) * (size + 2) + 1;
+    const int bottomRightHalo = bottomLeftHalo + size - 1;
+    
     // threadID must be in the range [1, size]
     if (threadID >= 1 && threadID <= size) {
-        d_life[threadID] = d_life[threadID + size * (size + 2)];                   // copy bottom row to upper halo row
-        d_life[threadID + (size + 2) * (size + 1)] = d_life[threadID + size + 2];  // copy upper row to bottom halo row
+        d_life[threadID] = d_life[threadID + size * (size + 2)]; // copy bottom row to upper halo row
+    } else if (threadID >= bottomLeftHalo && threadID <= bottomRightHalo) {
+        d_life[threadID] = d_life[threadID % (size + 2)];  // copy upper row to bottom halo row
     }
 }
 
