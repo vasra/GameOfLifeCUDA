@@ -21,9 +21,11 @@ __global__ void
 copyHaloColumns(char* d_life, const int size) {
     int threadID = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // threadID must be in the range [0, size + 1]
-    if (threadID <= size + 1) {
-        d_life[(size + 2) * threadID] = d_life[(size + 2) * threadID + size];           // copy rightmost column to left halo column
+    // threadID must either be a multiple of size + 2 (left column),
+    // or 
+    if (threadID % (size + 2) == 0) {
+        d_life[threadID] = d_life[threadID + size + 1]; // copy rightmost column to left halo column
+    } else if (threadID ) {
         d_life[(size + 1) * threadID + (size + 1)] = d_life[(size + 2) * threadID + 1]; // copy leftmost column to right halo column
     }
 
