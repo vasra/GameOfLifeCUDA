@@ -3,7 +3,7 @@
 __global__ void
 copyHaloRows(char* d_life, const int size) {
     // The global ID of the thread, aka its position on the 2D grid
-    int threadID = blockIdx.x * blockDim.x + threadIdx.x;
+    const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
     // The index of the first and last elements of the bottom halo respectively.
     // We do not take into account the corner elements
     const int bottomLeftHalo = (size + 1) * (size + 2) + 1;
@@ -19,14 +19,14 @@ copyHaloRows(char* d_life, const int size) {
 
 __global__ void
 copyHaloColumns(char* d_life, const int size) {
-    int threadID = blockIdx.x * blockDim.x + threadIdx.x;
+    const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
 
     // threadID must either be a multiple of size + 2 (left column),
     // or 
     if (threadID % (size + 2) == 0) {
         d_life[threadID] = d_life[threadID + size + 1]; // copy rightmost column to left halo column
-    } else if (threadID ) {
-        d_life[(size + 1) * threadID + (size + 1)] = d_life[(size + 2) * threadID + 1]; // copy leftmost column to right halo column
+    } else if ((threadID + 1) % (size + 2) == 0) {
+        d_life[threadID] = d_life[threadID - size];     // copy leftmost column to right halo column
     }
 
     // copy corner elements
@@ -34,15 +34,15 @@ copyHaloColumns(char* d_life, const int size) {
     // 2. bottom left  -> top right
     // 3. top left     -> bottom right
     // 4. top right    -> bottom left
-    if (0 == threadID) {
-        d_life[threadID] = d_life[(size + 2) * size + size];
-    } else if (size + 1 == threadID) {
-        d_life[threadID] = d_life[(size + 2) * size + 1];
-    } else if ((size + 2) * (size + 1) + size + 1 == threadID) {
-        d_life[threadID] = d_life[size + 3];
-    } else if ((size + 2) * size + 1 == threadID) {
-        d_life[threadID] = d_life[size];
-    }
+//     if (0 == threadID) {
+//         d_life[threadID] = d_life[(size + 2) * size + size];
+//     } else if (size + 1 == threadID) {
+//         d_life[threadID] = d_life[(size + 2) * size + 1];
+//     } else if ((size + 2) * (size + 1) + size + 1 == threadID) {
+//         d_life[threadID] = d_life[size + 3];
+//     } else if ((size + 2) * size + 1 == threadID) {
+//         d_life[threadID] = d_life[size];
+//     }
 }
 
 __global__ void
