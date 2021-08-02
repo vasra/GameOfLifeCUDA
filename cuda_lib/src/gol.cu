@@ -2,7 +2,7 @@
 
 __global__ void
 copyHaloRows(char* d_life, const int size) {
-    // The global ID of the thread, aka its position on the 2D grid
+    // The global ID of the thread, aka its position on the global grid
     const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
     // The index of the first and last elements of the bottom halo respectively.
     // We do not take into account the corner elements
@@ -10,39 +10,42 @@ copyHaloRows(char* d_life, const int size) {
     const int bottomRightHalo = bottomLeftHalo + size - 1;
     
     // threadID must be in the range [1, size]
-    if (threadID >= 1 && threadID <= size) {
+    if ((threadID >= 1) && (threadID <= size)) {
         d_life[threadID] = d_life[threadID + size * (size + 2)]; // copy bottom row to upper halo row
-    } else if (threadID >= bottomLeftHalo && threadID <= bottomRightHalo) {
-        d_life[threadID] = d_life[threadID % (size + 2)];  // copy upper row to bottom halo row
+        d_life[threadID + (size + 2) * (size + 1)] = d_life[threadID + size + 2];  // copy upper row to bottom halo row
     }
 }
 
 __global__ void
 copyHaloColumns(char* d_life, const int size) {
+    // The global ID of the thread, aka its position on the global grid
     const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // threadID must either be a multiple of size + 2 (left column),
-    // or 
-    if (threadID % (size + 2) == 0) {
-        d_life[threadID] = d_life[threadID + size + 1]; // copy rightmost column to left halo column
-    } else if ((threadID + 1) % (size + 2) == 0) {
+    if ((threadID % (size + 2) == 0) && (threadID <= (size + 2) * (size + 2))) {
+        d_life[threadID] = d_life[threadID + size]; // copy rightmost column to left halo column
+    } else if (((threadID + 1) % (size + 2) == 0) && (threadID <= (size + 2) * (size + 2))) {
         d_life[threadID] = d_life[threadID - size];     // copy leftmost column to right halo column
     }
 
-    // copy corner elements
+    if(threadID >= 1 && (threadID <= size)) {
+        d_life[threadID * (size + 2)] = d_life[threadID * (size + 2) + size];
+        d_life[threadID * (size + 2) + size + 1] = d_life[threadID * (size + 2) + 1];
+    }
+
+    // Copy corner elements
     // 1. bottom right -> top left
     // 2. bottom left  -> top right
     // 3. top left     -> bottom right
     // 4. top right    -> bottom left
-//     if (0 == threadID) {
-//         d_life[threadID] = d_life[(size + 2) * size + size];
-//     } else if (size + 1 == threadID) {
-//         d_life[threadID] = d_life[(size + 2) * size + 1];
-//     } else if ((size + 2) * (size + 1) + size + 1 == threadID) {
-//         d_life[threadID] = d_life[size + 3];
-//     } else if ((size + 2) * size + 1 == threadID) {
-//         d_life[threadID] = d_life[size];
-//     }
+    if (0 == threadID) {
+        d_life[threadID] = d_life[(size + 2) * size + size];
+    } else if (size + 1 == threadID) {
+        d_life[threadID] = d_life[(size + 2) * size + 1];
+    } else if ((size + 2) * (size + 1) + size + 1 == threadID) {
+        d_life[threadID] = d_life[size + 3];
+    } else if ((size + 2) * (size + 1) == threadID) {
+        d_life[threadID] = d_life[size * 2 + 2];
+    }
 }
 
 __global__ void
