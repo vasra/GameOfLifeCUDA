@@ -219,10 +219,10 @@ gameOfLife(const int size, char* h_life, int generations, int threads) {
         nextGen <<<gridDims, threads, sharedMemBytes>>> (d_life, d_life_copy, size);
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
-         // Swap the addresses of the two tables. That way, we avoid copying the contents
-         // of d_life to d_life_copy. Each round, the addresses are exchanged, saving time from running
-         // a loop to copy the contents.
-         /////////////////////////////////////////////////////////////////////////////////////////////////
+        // Swap the addresses of the two tables. That way, we avoid copying the contents
+        // of d_life to d_life_copy. Each round, the addresses are exchanged, saving time from running
+        // a loop to copy the contents.
+        /////////////////////////////////////////////////////////////////////////////////////////////////
         std::swap(d_life, d_life_copy);
     }
 
