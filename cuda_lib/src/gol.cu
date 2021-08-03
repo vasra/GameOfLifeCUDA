@@ -62,7 +62,7 @@ nextGen(char* d_life, char* d_life_copy, int size) {
     // The local ID of the thread in the block
     int threadIdLocal = threadIdx.y * blockDim.x + threadIdx.x;
 
-    int neighbours;
+    int neighbours = 0;
 
     if (X <= size + 1 && Y <= size + 1) {
         sgrid[threadIdLocal] = d_life[threadIdGlobal];
@@ -71,16 +71,18 @@ nextGen(char* d_life, char* d_life_copy, int size) {
     __syncthreads();
 
     // If the thread does not correspond to a halo element, then calculate its neighbours
-    if (threadIdx.x > 0 && threadIdx.x < blockDim.x - 1 && threadIdx.y > 0 && threadIdx.y < blockDim.y - 1) {
+    if ((threadIdx.x > 0) && (threadIdx.x < blockDim.x - 1) && 
+        (threadIdx.y > 0) && (threadIdx.y < blockDim.y - 1)) {
         neighbours = sgrid[threadIdLocal - blockDim.x - 1] + sgrid[threadIdLocal - blockDim.x] + sgrid[threadIdLocal - blockDim.x + 1] +
                      sgrid[threadIdLocal - 1]              + /* you are here */                  sgrid[threadIdLocal + 1]              +
                      sgrid[threadIdLocal + blockDim.x - 1] + sgrid[threadIdLocal + blockDim.x] + sgrid[threadIdLocal + blockDim.x + 1];
-    }
-
-    if ((2 == neighbours && 1 == sgrid[threadIdLocal]) || (3 == neighbours)) {
-        sgrid[threadIdLocal] = 1;
-    } else {
-        sgrid[threadIdLocal] = 0;
+        
+        if ((2 == neighbours && 1 == sgrid[threadIdLocal]) || (3 == neighbours)) {
+            sgrid[threadIdLocal] = 1;
+        } else {
+            sgrid[threadIdLocal] = 0;
+        }
+        d_life_copy[threadIdGlobal] = sgrid[threadIdLocal];
     }
 }
 
@@ -233,6 +235,11 @@ gameOfLife(const int size, char* h_life, int generations, int threads) {
     }
 
     float msecs = getElapsedtime(t_start);
+
+    err = cudaMemcpy(h_life, d_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+    printGrid(size, d_life);
+    printf("\n");
+    printGrid(size, d_life_copy);
 
     err = cudaFree(d_life);
     if (cudaSuccess != err) {

@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 
+void gameOfLifeTest();
 void copyHaloRowsTest();
 void copyHaloColumnsTest();
 void copyHalos();
@@ -15,6 +16,7 @@ bool compareLastRealAndTopHaloRow(char* h_life, int size);
 // the size of the grid without the halos
 constexpr double size = 25.0f;
 constexpr double threads = 16.0f;
+constexpr int generations = 1;
 
 // The four corners of the grid that contain REAL elements and not halo elements
 constexpr int topLeft     = size + 3;
@@ -30,8 +32,19 @@ main() {
     std::cout << "Hello world test!" << std::endl;
     //copyHaloRowsTest();
     //copyHaloColumnsTest();
-    copyHalos();
+    //copyHalos();
+    //gameOfLifeTest();
     return 0;
+}
+
+__host__ void
+gameOfLifeTest() {
+  char* h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
+  assert(h_life != NULL);
+  initialState(size, h_life);
+  printGrid(size, h_life);
+
+  gameOfLife(size, h_life, generations, threads);  
 }
 
 void

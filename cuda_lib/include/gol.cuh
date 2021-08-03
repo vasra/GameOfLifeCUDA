@@ -13,12 +13,6 @@
 #include <timestamp.h>
 #include <device_launch_parameters.h>
 
-__host__ void
-printGrid(int size, char* h_life);
-
-__host__ void
-initialState(int size, char* h_life);
-
 __global__ void
 copyHaloRows(char* d_life, const int size);
 
@@ -27,5 +21,14 @@ copyHaloColumns(char* d_life, const int size);
 
 __global__ void
 nextGen(char* d_life, char* d_life_copy, int size);
+
+__host__ void
+printGrid(int size, char* h_life);
+
+__host__ void
+initialState(int size, char* h_life);
+
+__host__ float
+gameOfLife(const int size, char* h_life, int generations, int threads);
 
 #endif
