@@ -227,7 +227,7 @@ gameOfLife(const int size, char* h_life, int generations, int threads) {
     }
 
     err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
+    if (cudaSuccess != err) {
         fprintf(stderr, "Error synchronizing devices: %d\n", err);
         return static_cast<float>(err);
     }
@@ -235,13 +235,13 @@ gameOfLife(const int size, char* h_life, int generations, int threads) {
     float msecs = getElapsedtime(t_start);
 
     err = cudaFree(d_life);
-    if (err != cudaSuccess) {
+    if (cudaSuccess != err) {
         fprintf(stderr, "Error freeing GPU memory: %d\n", err);
         return static_cast<float>(err);
     }
 
     err = cudaFree(d_life_copy);
-    if (err != cudaSuccess) {
+    if (cudaSuccess != err) {
         fprintf(stderr, "Error freeing GPU memory: %d\n", err);
         return static_cast<float>(err);
     }
