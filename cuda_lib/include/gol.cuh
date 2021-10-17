@@ -13,22 +13,30 @@
 #include <timestamp.h>
 #include <device_launch_parameters.h>
 
-__global__ void
-copyHaloRows(char* d_life, const int size);
+constexpr int SIZE = 840;   // the size of one side of the square grid
+constexpr int BLOCK_X = 32; // the size of the x dimension of a block
+constexpr int BLOCK_Y = 16; // the size of the y dimension of a block
+//constexpr int THREADS = 16;
 
-__global__ void
-copyHaloColumns(char* d_life, const int size);
+__device__ __forceinline__ void
+copyHaloRows(char* d_life);
 
-__global__ void
-nextGen(char* d_life, char* d_life_copy, int size);
+__device__ __forceinline__ void
+copyHaloColumns(char* d_life);
+
+__device__ __forceinline__ void
+nextGen(char* d_life, char* d_life_copy);
 
 __host__ void
-printGrid(int size, char* h_life);
+printGrid(char* h_life);
 
 __host__ void
-initialState(int size, char* h_life);
+initialState(char* h_life);
+
+__host__ dim3
+calculateCopyingBlocks(int size);
 
 __host__ float
-gameOfLife(const int size, char* h_life, int generations, int threads);
+gameOfLife(char* h_life, int generations);
 
 #endif

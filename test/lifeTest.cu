@@ -10,22 +10,20 @@ void gameOfLifeTest();
 void copyHaloRowsTest();
 void copyHaloColumnsTest();
 void copyHalos();
-bool compareFirstRealAndBottomHaloRow(char* h_life, int size);
-bool compareLastRealAndTopHaloRow(char* h_life, int size);
+bool compareFirstRealAndBottomHaloRow(char* h_life);
+bool compareLastRealAndTopHaloRow(char* h_life);
 
-// the size of the grid without the halos
-constexpr double size = 25.0f;
-constexpr double threads = 16.0f;
+// the SIZE of the grid without the halos
 constexpr int generations = 1;
 
 // The four corners of the grid that contain REAL elements and not halo elements
-constexpr int topLeft     = size + 3;
-constexpr int topRight    = topLeft + size - 1;
-constexpr int bottomLeft  = (size + 2) * size + 1;
-constexpr int bottomRight = bottomLeft + size - 1;
+constexpr int topLeft     = SIZE + 3;
+constexpr int topRight    = topLeft + SIZE - 1;
+constexpr int bottomLeft  = (SIZE + 2) * SIZE + 1;
+constexpr int bottomRight = bottomLeft + SIZE - 1;
 
-constexpr int bottomLeftHalo  = (size + 1) * (size + 2) + 1;
-constexpr int bottomRightHalo = bottomLeftHalo + size - 1;
+constexpr int bottomLeftHalo  = (SIZE + 1) * (SIZE + 2) + 1;
+constexpr int bottomRightHalo = bottomLeftHalo + SIZE - 1;
 
 int
 main() {
@@ -39,74 +37,74 @@ main() {
 
 __host__ void
 gameOfLifeTest() {
-  char* h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
+  char* h_life = (char*)malloc((SIZE + 2) * (SIZE + 2) * sizeof(char));
   assert(h_life != NULL);
-  initialState(size, h_life);
-  printGrid(size, h_life);
+  initialState(SIZE, h_life);
+  printGrid(SIZE, h_life);
 
-  gameOfLife(size, h_life, generations, threads);  
+  gameOfLife(SIZE, h_life, generations, THREADS);  
 }
 
 void
 copyHaloRowsTest() {
-  char* h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
+  char* h_life = (char*)malloc((SIZE + 2) * (SIZE + 2) * sizeof(char));
   assert(h_life != NULL);
-  initialState(size, h_life);
-  //printGrid(size, h_life);
+  initialState(SIZE, h_life);
+  //printGrid(SIZE, h_life);
 
   char* d_life;
   cudaError_t err;
-  err = cudaMalloc((void**)&d_life, (size + 2) * (size + 2) * sizeof(char));
+  err = cudaMalloc((void**)&d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char));
   assert(cudaSuccess == err);
 
-  err = cudaMemcpy(d_life, h_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyHostToDevice);
+  err = cudaMemcpy(d_life, h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
   assert(cudaSuccess == err);
 
-  int copyingBlocksRows = static_cast<int>(ceil(size / threads));
+  int copyingBlocksRows = SIZE / THREADS;
   std::cout << "copyingBlocksRows " << copyingBlocksRows << std::endl;
-  bool ret = compareLastRealAndTopHaloRow(h_life, size);
-  ret = compareFirstRealAndBottomHaloRow(h_life, size);
+  bool ret = compareLastRealAndTopHaloRow(h_life, SIZE);
+  ret = compareFirstRealAndBottomHaloRow(h_life, SIZE);
 
-  copyHaloRows<<<copyingBlocksRows, threads>>>(d_life, size);
+  copyHaloRows<<<copyingBlocksRows, THREADS>>>(d_life, SIZE);
 
   err = cudaDeviceSynchronize();
   assert(cudaSuccess == err);
 
-  err = cudaMemcpy(h_life, d_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+  err = cudaMemcpy(h_life, d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
   assert(cudaSuccess == err);
-  printGrid(size, h_life);
+  printGrid(SIZE, h_life);
 
   cudaFree(d_life);
   free(h_life);
 }
 
 void copyHaloColumnsTest() {
-    char* h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
+    char* h_life = (char*)malloc((SIZE + 2) * (SIZE + 2) * sizeof(char));
     assert(h_life != NULL);
-    initialState(size, h_life);
-    printGrid(size, h_life);
+    initialState(SIZE, h_life);
+    printGrid(SIZE, h_life);
     std::cout << std:: endl << std::endl;
 
     char* d_life;
     cudaError_t err;
-    err = cudaMalloc((void**)&d_life, (size + 2) * (size + 2) * sizeof(char));
+    err = cudaMalloc((void**)&d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char));
     assert(cudaSuccess == err);
 
-    err = cudaMemcpy(d_life, h_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_life, h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
     assert(cudaSuccess == err);
 
-    int copyingBlocksColumns = static_cast<int>(ceil((size + 2) * (size + 2) / threads));
+    int copyingBlocksColumns = SIZE + 2) * (SIZE + 2) / THREADS;
     std::cout << "copyingBlocksColumns " << copyingBlocksColumns << std::endl;
 
-    copyHaloColumns<<<copyingBlocksColumns, threads>>>(d_life, size);
+    copyHaloColumns<<<copyingBlocksColumns, THREADS>>>(d_life, SIZE);
 
     err = cudaDeviceSynchronize();
     assert(cudaSuccess == err);
 
-    err = cudaMemcpy(h_life, d_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(h_life, d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
     assert(cudaSuccess == err);
 
-    printGrid(size, h_life);
+    printGrid(SIZE, h_life);
 
     cudaFree(d_life);
     free(h_life);
@@ -114,55 +112,55 @@ void copyHaloColumnsTest() {
 
 void
 copyHalos() {
-  char* h_life = (char*)malloc((size + 2) * (size + 2) * sizeof(char));
+  char* h_life = (char*)malloc((SIZE + 2) * (SIZE + 2) * sizeof(char));
   assert(h_life != NULL);
-  initialState(size, h_life);
-  printGrid(size, h_life);
+  initialState(SIZE, h_life);
+  printGrid(SIZE, h_life);
 
   char* d_life;
   cudaError_t err;
-  err = cudaMalloc((void**)&d_life, (size + 2) * (size + 2) * sizeof(char));
+  err = cudaMalloc((void**)&d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char));
   assert(cudaSuccess == err);
 
-  err = cudaMemcpy(d_life, h_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyHostToDevice);
+  err = cudaMemcpy(d_life, h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
   assert(cudaSuccess == err);
 
-  int copyingBlocksRows = static_cast<int>(ceil(size / threads));
-  int copyingBlocksColumns = static_cast<int>(ceil((size + 2) / threads));
+  int copyingBlocksRows = SIZE / THREADS;
+  int copyingBlocksColumns = SIZE + 2) / THREADS;
 
   std::cout << "copyingBlocksRows " << copyingBlocksRows << std::endl;
   std::cout << "copyingBlocksColumns " << copyingBlocksColumns << std::endl;
 
-  copyHaloRows<<<copyingBlocksRows, threads>>>(d_life, size);
-  copyHaloColumns<<<copyingBlocksColumns, threads>>>(d_life, size);
+  copyHaloRows<<<copyingBlocksRows, THREADS>>>(d_life, SIZE);
+  copyHaloColumns<<<copyingBlocksColumns, THREADS>>>(d_life, SIZE);
 
   err = cudaDeviceSynchronize();
   assert(cudaSuccess == err);
 
-  err = cudaMemcpy(h_life, d_life, (size + 2) * (size + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+  err = cudaMemcpy(h_life, d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
   assert(cudaSuccess == err);
 
-  bool ret = compareLastRealAndTopHaloRow(h_life, size);
+  bool ret = compareLastRealAndTopHaloRow(h_life, SIZE);
   assert(ret);
 
-  ret = compareFirstRealAndBottomHaloRow(h_life, size);
+  ret = compareFirstRealAndBottomHaloRow(h_life, SIZE);
   assert(ret);
 
-  printGrid(size, h_life);
+  printGrid(SIZE, h_life);
 
   cudaFree(d_life);
   free(h_life);
 }
 
 bool
-compareFirstRealAndBottomHaloRow(char* h_life, int size) {
+compareFirstRealAndBottomHaloRow(char* h_life) {
   // Indices of the first element in the first REAL row, and the
   // first element in the bottom halo row respectively. We do not take
   // into account the corner elements
-  int topLeftReal = size + 3;
-  int bottomLeftHalo = (size + 1) * (size + 2) + 1;
+  int topLeftReal = SIZE + 3;
+  int bottomLeftHalo = (SIZE + 1) * (SIZE + 2) + 1;
 
-  for (int i = 0; i < size; i++) {
+  for (int i = 0; i < SIZE; i++) {
     if (*(h_life + topLeftReal + i) != *(h_life + bottomLeftHalo + i)) {
       return false;
     }
@@ -171,14 +169,14 @@ compareFirstRealAndBottomHaloRow(char* h_life, int size) {
 }
 
 bool
-compareLastRealAndTopHaloRow(char* h_life, int size) {
+compareLastRealAndTopHaloRow(char* h_life) {
   // Indices of the first element in the last REAL row, and the
   // first element in the top halo row respectively. We do not take
   // into account the corner elements
-  int bottomLeftReal = size * (size + 2) + 1;
+  int bottomLeftReal = SIZE * (SIZE + 2) + 1;
   int topLeftHalo = 1;
 
-  for (int i = 0; i < size; i++) {
+  for (int i = 0; i < SIZE; i++) {
     if (*(h_life + bottomLeftReal + i) != *(h_life + topLeftHalo + i)) {
       return false;
     }
