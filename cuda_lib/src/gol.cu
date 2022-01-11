@@ -44,17 +44,20 @@ nextGen(char* d_life, char* d_life_copy) {
    __syncthreads();
 
    // If the thread does not correspond to a halo element inside the block, then calculate its neighbours
-   if (x > 0 && x < blockDim.x - 1 && y > 0 && y < blockDim.y - 1) {
-      neighbours = sgrid[y - 1][x - 1] + sgrid[y - 1][x]  + sgrid[y - 1][x + 1] +
-                sgrid[y][x - 1]    + /* you are here */ sgrid[y][x + 1]    +
-                sgrid[y + 1][x - 1] + sgrid[y + 1][x]  + sgrid[y + 1][x + 1];
-      
-      if ((2 == neighbours && 1 == sgrid[y][x]) || (3 == neighbours)) {
-         sgrid[y][x] = 1;
-      } else {
-         sgrid[y][x] = 0;
+   if (X <= SIZE && Y <= SIZE) {
+      if (x != 0 && x != blockDim.x - 1 && y != 0 && y != blockDim.y - 1) {
+         neighbours = sgrid[y - 1][x - 1] + sgrid[y - 1][x]  + sgrid[y - 1][x + 1] +
+                   sgrid[y][x - 1]    + /* you are here */ sgrid[y][x + 1]    +
+                   sgrid[y + 1][x - 1] + sgrid[y + 1][x]  + sgrid[y + 1][x + 1];
+         //printf("Thread %d\n", threadIdGlobal);
+         //printf("sgrid[%d][%d] = %d\n", y, x, sgrid[y][x]);
+         if ((2 == neighbours && 1 == sgrid[y][x]) || (3 == neighbours)) {
+            sgrid[y][x] = 1;
+         } else {
+            sgrid[y][x] = 0;
+         }
+         d_life_copy[threadIdGlobal] = sgrid[y][x];
       }
-      d_life_copy[threadIdGlobal] = sgrid[y][x];
    }
 }
 
@@ -112,7 +115,7 @@ calculateCopyingBlocks(int size) {
 // are represented by a 1, and the dead organisms by a 0.
 //////////////////////////////////////////////////////////////////////////////////////
 __host__ void
-gameOfLife(char* h_life, int generations, float* msecs) {
+gameOfLife(char** h_life, int generations) {
    // The grids that will be copied to the GPU
    char* d_life;
    char* d_life_copy;
@@ -123,18 +126,28 @@ gameOfLife(char* h_life, int generations, float* msecs) {
    err = cudaMalloc((void**)&d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char));
    if (cudaSuccess != err) {
       fprintf(stderr, "Could not allocate CUDA memory, with error code %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
       return;
    }
 
-   err = cudaMemcpy(d_life, h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
+   err = cudaMemcpy(d_life, *h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
    if (cudaSuccess != err) {
       fprintf(stderr, "Could not copy to GPU memory, with error code %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
       return;
    }
 
    err = cudaMalloc((void**)&d_life_copy, (SIZE + 2) * (SIZE + 2) * sizeof(char));
    if (cudaSuccess != err) {
       fprintf(stderr, "Could not allocate CUDA memory, with error code %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
+      return;
+   }
+   
+   err = cudaMemcpy(d_life_copy, *h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
+   if (cudaSuccess != err) {
+      fprintf(stderr, "Could not copy to GPU memory, with error code %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
       return;
    }
 
@@ -152,13 +165,19 @@ gameOfLife(char* h_life, int generations, float* msecs) {
    unsigned int gridX = static_cast<int>(ceil(SIZE / static_cast<float>(threadsInBlock.x - 2)));
    unsigned int gridY = static_cast<int>(ceil(SIZE / static_cast<float>(threadsInBlock.y - 2)));
    dim3 gridDims{ gridX, gridY, 1 };
+   
+   //timestamp t_start = getTimestamp();
 
-   timestamp t_start = getTimestamp();
+   cudaEvent_t start, end;
+   cudaEventCreate(&start);
+   cudaEventCreate(&end);
+
+   cudaEventRecord(start);
 
    for (int gen = 0; gen < generations; gen++) {
       copyHaloRows <<<copyingBlocksRows, copyBlock>>> (d_life);
       copyHaloColumns <<<copyingBlocksColumns, copyBlock>>> (d_life);
-      nextGen <<<gridDims, BLOCK_X * BLOCK_Y>>> (d_life, d_life_copy);
+      nextGen <<<gridDims, threadsInBlock>>> (d_life, d_life_copy);
 
       /////////////////////////////////////////////////////////////////////////////////////////////////
       // Swap the addresses of the two tables. That way, we avoid copying the contents
@@ -174,22 +193,32 @@ gameOfLife(char* h_life, int generations, float* msecs) {
       return;
    }
 
-   *msecs = getElapsedtime(t_start);
-
-   err = cudaMemcpy(h_life, d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
-   printGrid(d_life);
-   printf("\n");
-   printGrid(d_life_copy);
+   cudaEventRecord(end);
+   cudaEventSynchronize(end); 
+   //*msecs = getElapsedtime(t_start);
+   float msecs = 0.0f;
+   cudaEventElapsedTime(&msecs, start, end);
+   printf("Elapsed time: %f milliseconds\n", msecs);
+   //err = cudaMemcpy(*h_life, d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+   //printf("Printing d_life\n");
+   //printGrid(*h_life);
+   //printf("\n");
+   //err = cudaMemcpy(*h_life, d_life_copy, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyDeviceToHost);
+   //printf("Printing d_life_copy\n");
+   //printGrid(*h_life);
+   //printf("\n");
 
    err = cudaFree(d_life);
    if (cudaSuccess != err) {
       fprintf(stderr, "Error freeing GPU memory: %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
       return;
    }
 
    err = cudaFree(d_life_copy);
    if (cudaSuccess != err) {
       fprintf(stderr, "Error freeing GPU memory: %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
       return;
    }
 }

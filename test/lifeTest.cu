@@ -14,35 +14,34 @@ bool compareFirstRealAndBottomHaloRow(char* h_life);
 bool compareLastRealAndTopHaloRow(char* h_life);
 
 // the SIZE of the grid without the halos
-constexpr int generations = 1;
+constexpr int generations = 1000;
 
 // The four corners of the grid that contain REAL elements and not halo elements
-constexpr int topLeft     = SIZE + 3;
-constexpr int topRight    = topLeft + SIZE - 1;
-constexpr int bottomLeft  = (SIZE + 2) * SIZE + 1;
-constexpr int bottomRight = bottomLeft + SIZE - 1;
+//constexpr int topLeft     = SIZE + 3;
+//constexpr int topRight    = topLeft + SIZE - 1;
+//constexpr int bottomLeft  = (SIZE + 2) * SIZE + 1;
+//constexpr int bottomRight = bottomLeft + SIZE - 1;
 
-constexpr int bottomLeftHalo    = (SIZE + 1) * (SIZE + 2) + 1;
-constexpr int bottomRightHalo = bottomLeftHalo + SIZE - 1;
+//constexpr int bottomLeftHalo    = (SIZE + 1) * (SIZE + 2) + 1;
+//constexpr int bottomRightHalo = bottomLeftHalo + SIZE - 1;
 
 int
 main() {
-   std::cout << "Hello world test!" << std::endl;
-   copyHaloRowsTest();
+   //copyHaloRowsTest();
    //copyHaloColumnsTest();
    //copyHalos();
-   //gameOfLifeTest();
+   gameOfLifeTest();
    return 0;
 }
 
 __host__ void
 gameOfLifeTest() {
    char* h_life = (char*)malloc((SIZE + 2) * (SIZE + 2) * sizeof(char));
-   float* errorCode;
    assert(h_life != NULL);
+   
    initialState(h_life);
-   printGrid(h_life);
-   gameOfLife(h_life, generations, errorCode);
+   //printGrid(h_life);
+   gameOfLife(&h_life, generations);
 }
 
 void
@@ -55,6 +54,10 @@ copyHaloRowsTest() {
    char* d_life;
    cudaError_t err;
    err = cudaMalloc((void**)&d_life, (SIZE + 2) * (SIZE + 2) * sizeof(char));
+   if (err != cudaSuccess) {
+      fprintf(stderr, "Failed to allocate memory on the GPU, error code : %d\n", err);
+      fprintf(stderr, cudaGetErrorString(err));
+   }
    assert(cudaSuccess == err);
 
    err = cudaMemcpy(d_life, h_life, (SIZE + 2) * (SIZE + 2) * sizeof(char), cudaMemcpyHostToDevice);
