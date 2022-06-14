@@ -13,7 +13,6 @@ void copyHalos();
 bool compareFirstRealAndBottomHaloRow(char* h_life);
 bool compareLastRealAndTopHaloRow(char* h_life);
 
-// the SIZE of the grid without the halos
 constexpr int generations = 1000;
 
 // The four corners of the grid that contain REAL elements and not halo elements

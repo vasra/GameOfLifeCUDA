@@ -34,7 +34,7 @@
 ################################################################################
 
 # Location of the CUDA Toolkit
-CUDA_PATH ?= /usr/local/cuda-11.4
+CUDA_PATH ?= /apps/compilers/cuda/8.0.61
 
 # architecture
 HOST_ARCH   := $(shell uname -m)
@@ -271,7 +271,7 @@ endif
 OPTFLAG = -O2 -fomit-frame-pointer -ftree-vectorize -ftree-vectorizer-verbose=0  -funroll-loops
 INCDIR = -Icuda_lib/include
 FLAGS = ${OPTFLAG} -I${CUDA_INSTALL_PATH}/include -Wall -g ${INCDIR}
-NVCCFLAGS = -O0 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v -g ${INCDIR} -std=c++11
+NVCCFLAGS = -O3 -I${CUDA_INSTALL_PATH}/include --compiler-options -fno-strict-aliasing --ptxas-options=-v ${INCDIR} -std=c++11
 BITS = $(shell getconf LONG_BIT)
 ifeq (${BITS},64)
         LIBSUFFIX := 64

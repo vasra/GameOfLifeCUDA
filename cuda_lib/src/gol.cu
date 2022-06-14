@@ -195,7 +195,7 @@ gameOfLife(char** h_life, int generations) {
 
    cudaEventRecord(end);
    cudaEventSynchronize(end); 
-   //*msecs = getElapsedtime(t_start);
+ 
    float msecs = 0.0f;
    cudaEventElapsedTime(&msecs, start, end);
    printf("Elapsed time: %f milliseconds\n", msecs);

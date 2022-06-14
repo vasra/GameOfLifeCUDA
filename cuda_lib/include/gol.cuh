@@ -13,8 +13,8 @@
 #include <timestamp.h>
 #include <device_launch_parameters.h>
 
-constexpr int SIZE = 1680;   // the size of one side of the square grid
-constexpr int BLOCK_X = 2; // the size of the x dimension of a block
+constexpr int SIZE = 840;   // the size of one side of the square grid
+constexpr int BLOCK_X = 32; // the size of the x dimension of a block
 constexpr int BLOCK_Y = 16; // the size of the y dimension of a block
 
 __global__ void
